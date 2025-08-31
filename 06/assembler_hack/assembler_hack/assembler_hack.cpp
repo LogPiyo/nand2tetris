@@ -6,10 +6,10 @@
 #include <vector>
 #include <string>
 #include <bitset>
+#include <direct.h>
 #include "const.h"
 #include "Parser.h"
 #include "Code.h"
-#include <direct.h>
 
 int main(int argc, char* argv[])
 {
@@ -23,6 +23,8 @@ int main(int argc, char* argv[])
 	std::cout << "Current working dir: " << buff << std::endl;
 	std::cout << "Attempting to open file: " << argv[1] << std::endl;
 
+	std::map<std::string, int> symbolTable = initialSymbolTable;
+
 	std::vector<std::string> lines;
 	std::ifstream input(argv[1]);
 	std::string outputFileName = std::string(argv[1]).substr(0, std::string(argv[1]).find_last_of('.')) + ".hack";
@@ -35,7 +37,27 @@ int main(int argc, char* argv[])
 
 	std::cout << "DEBUG: File opened successfully. Proceeding to read." << std::endl;
 	std::string line;
+	int lineno = 0;
+
+	// First pass: handle labels
 	while (std::getline(input, line)) {
+		Parser::advance(&line);
+		if (line.empty()) continue;
+
+		if (line[0] == '(') {
+			std::string symbol = line.substr(1, line.length() - 2);
+			if (!symbolTable.count(symbol)) {
+				symbolTable[symbol] = lineno;
+			}
+			continue;
+		}
+
+		lineno++;
+		lines.push_back(line);
+	}
+
+	// Second pass: handle A and C instructions
+	for (auto line : lines) {
 		Parser::advance(&line);
 
 		std::string symbol;
@@ -47,7 +69,6 @@ int main(int argc, char* argv[])
 
 		switch (instructionType) {
 		case A_INSTRUCTION:
-		case L_INSTRUCTION:
 		{
 			symbol = Parser::symbol(line);
 			std::cout << "DEBUG: Processing A/L-instruction, symbol: " << symbol << std::endl;
@@ -67,22 +88,26 @@ int main(int argc, char* argv[])
 				// 数字ならバイナリに変換
 				output << "0" + std::bitset<15>(std::stoi(symbol)).to_string() << '\n';
 			}
+			else if (symbolTable.count(symbol)) {
+				output << "0" + std::bitset<15>(symbolTable[symbol]).to_string() << '\n';
+			}
 			else {
-				// 数字でなければ、デバッグメッセージを出してスキップ
-				std::cout << "DEBUG: Skipping non-numeric symbol '" << symbol << "'" << std::endl;
+				std::cerr << "Error: Undefined symbol " << symbol << std::endl;
 			}
 			break;
 		}
+		case L_INSTRUCTION:
+			break;
 		case C_INSTRUCTION:
 			dest = Parser::dest(line);
 			comp = Parser::comp(line);
 			jump = Parser::jump(line);
 			std::cout << "DEBUG: Processing C-instruction" << std::endl;
-			output << "111" + Code::dest(dest) + Code::comp(comp) + Code::jump(jump) << '\n';
+			output << "111" + Code::comp(comp) + Code::dest(dest) + Code::jump(jump) << '\n';
 			break;
 		}
 	}
-	std::cout << std::endl;
+	std::cout << std::flush;
 
 	input.close();
 	output.close();
