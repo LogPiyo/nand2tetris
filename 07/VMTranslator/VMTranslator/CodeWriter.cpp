@@ -165,6 +165,196 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 			output << "@SP\n";
 			output << "M=M+1\n";
 		}
+
+		if (argument == "local") {
+			output << "@" << index << "\n";
+			output << "D=A\n";
+			output << "@LCL\n";
+			output << "A=D+M\n";
+			output << "D=M\n";
+			output << "@SP\n";
+			output << "A=M\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M+1\n";
+		}
+
+		if (argument == "argument") {
+			output << "@" << index << "\n";
+			output << "D=A\n";
+			output << "@ARG\n";
+			output << "A=D+M\n";
+			output << "D=M\n";
+			output << "@SP\n";
+			output << "A=M\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M+1\n";
+		}
+
+		if (argument == "this") {
+			output << "@" << index << "\n";
+			output << "D=A\n";
+			output << "@THIS\n";
+			output << "A=D+M\n";
+			output << "D=M\n";
+			output << "@SP\n";
+			output << "A=M\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M+1\n";
+		}
+
+		if (argument == "that") {
+			output << "@" << index << "\n";
+			output << "D=A\n";
+			output << "@THAT\n";
+			output << "A=D+M\n";
+			output << "D=M\n";
+			output << "@SP\n";
+			output << "A=M\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M+1\n";
+		}
+
+		if (argument == "temp") {
+			output << "@" << 5 + index << "\n";
+			output << "D=M\n";
+			output << "@SP\n";
+			output << "A=M\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M+1\n";
+		}
+
+		if (argument == "pointer") {
+			if (index == 0) {
+					output << "@THIS\n";
+					output << "D=M\n";
+					output << "@SP\n";
+					output << "A=M\n";
+					output << "M=D\n";
+					output << "@SP\n";
+					output << "M=M+1\n";
+			}
+
+			if (index == 1) {
+				output << "@THAT\n";
+				output << "D=M\n";
+				output << "@SP\n";
+				output << "A=M\n";
+				output << "M=D\n";
+				output << "@SP\n";
+				output << "M=M+1\n";
+			}
+		}
+	}
+
+	if (command == "pop") {
+		if (argument == "constant") {
+			output << "@SP\n";
+			output << "M=M-1\n";
+		}
+
+		if (argument == "local") {
+			output << "@LCL\n";
+			output << "D=M\n";
+			output << "@" << index << "\n";
+			output << "D=D+A\n";
+			output << "@R13\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M-1\n";
+			output << "A=M\n";
+			output << "D=M\n";
+			output << "@R13\n";
+			output << "A=M\n";
+			output << "M=D\n";
+		}
+
+		if (argument == "argument") {
+			output << "@ARG\n";
+			output << "D=M\n";
+			output << "@" << index << "\n";
+			output << "D=D+A\n";
+			output << "@R13\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M-1\n";
+			output << "A=M\n";
+			output << "D=M\n";
+			output << "@R13\n";
+			output << "A=M\n";
+			output << "M=D\n";
+		}
+
+		if (argument == "this") {
+			output << "@THIS\n";
+			output << "D=M\n";
+			output << "@" << index << "\n";
+			output << "D=D+A\n";
+			output << "@R13\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M-1\n";
+			output << "A=M\n";
+			output << "D=M\n";
+			output << "@R13\n";
+			output << "A=M\n";
+			output << "M=D\n";
+		}
+
+		if (argument == "that") {
+			output << "@THAT\n";
+			output << "D=M\n";
+			output << "@" << index << "\n";
+			output << "D=D+A\n";
+			output << "@R13\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M-1\n";
+			output << "A=M\n";
+			output << "D=M\n";
+			output << "@R13\n";
+			output << "A=M\n";
+			output << "M=D\n";
+		}
+
+
+		if (argument == "temp") {
+			output << "@" << 5 + index << "\n";
+			output << "D=A\n";
+			output << "@R13\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M-1\n";
+			output << "A=M\n";
+			output << "D=M\n";
+			output << "@R13\n";
+			output << "A=M\n";
+			output << "M=D\n";
+		}
+
+		if (argument == "pointer") {
+			if (index == 0) {
+				output << "@SP\n";
+				output << "M=M-1\n";
+				output << "A=M\n";
+				output << "D=M\n";
+				output << "@THIS\n";
+				output << "M=D\n";
+			}
+
+			if (index == 1) {
+				output << "@SP\n";
+				output << "M=M-1\n";
+				output << "A=M\n";
+				output << "D=M\n";
+				output << "@THAT\n";
+				output << "M=D\n";
+			}
+		}
 	}
 }
 
