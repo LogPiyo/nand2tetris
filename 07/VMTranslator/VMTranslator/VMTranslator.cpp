@@ -22,7 +22,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::string outputFile = std::string(argv[1]).substr(0, std::string(argv[1]).find_last_of('.')) + ".asm";
+    std::string fileName = std::string(argv[1]).substr(0, std::string(argv[1]).find_last_of('.'));
+    std::string outputFile = fileName + ".asm";
     std::ofstream output(outputFile);
 
     std::string line;
@@ -33,7 +34,7 @@ int main(int argc, char* argv[])
             case C_ARITHMETIC:
             {
                 std::string arg1 = Parser::arg1(line);
-                CodeWriter::writeArithmetic(output, arg1);
+                CodeWriter::writeArithmetic(output, arg1, fileName);
                 break;
             }
             case C_POP:
@@ -41,7 +42,7 @@ int main(int argc, char* argv[])
             {
                 std::string arg1 = Parser::arg1(line);
                 std::string arg2 = Parser::arg2(line);
-				CodeWriter::writePushPop(output, commandType == C_PUSH ? "push" : "pop", arg1, std::stoi(arg2));
+				CodeWriter::writePushPop(output, commandType == C_PUSH ? "push" : "pop", arg1, std::stoi(arg2), fileName);
                 break;
             }
         }

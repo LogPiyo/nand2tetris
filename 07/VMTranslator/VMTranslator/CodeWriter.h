@@ -5,7 +5,7 @@
 class CodeWriter
 {
 	public:
-		static void writeArithmetic(std::ofstream &output, std::string command);
-		static void writePushPop(std::ofstream &output, std::string command, std::string argument, int index);
+		static void writeArithmetic(std::ofstream &output, std::string command, std::string fileName);
+		static void writePushPop(std::ofstream &output, std::string command, std::string argument, int index, std::string fileName);
 };
 

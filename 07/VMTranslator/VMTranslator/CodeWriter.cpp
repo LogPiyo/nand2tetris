@@ -5,8 +5,9 @@
 
 static void helperWriteArithmetic(std::ofstream &output, std::string command);
 static int labelCounter = 0;
+static int staticCounter = 0;
 
-void CodeWriter::writeArithmetic(std::ofstream &output, std::string command)
+void CodeWriter::writeArithmetic(std::ofstream &output, std::string command, std::string fileName)
 {
 	std::string trueLabel = "TRUE_" + std::to_string(labelCounter);
 	std::string falseLabel = "FALSE_" + std::to_string(labelCounter);
@@ -153,7 +154,7 @@ void CodeWriter::writeArithmetic(std::ofstream &output, std::string command)
 	labelCounter++;
 }
 
-void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::string argument, int index)
+void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::string argument, int index, std::string fileName)
 {
 	if (command == "push") {
 		if (argument == "constant") {
@@ -248,6 +249,16 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 				output << "@SP\n";
 				output << "M=M+1\n";
 			}
+		}
+
+		if (argument == "static") {
+			output << "@" << fileName << "." << index << "\n";
+			output << "D=M\n";
+			output << "@SP\n";
+			output << "A=M\n";
+			output << "M=D\n";
+			output << "@SP\n";
+			output << "M=M+1\n";
 		}
 	}
 
@@ -354,6 +365,15 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 				output << "@THAT\n";
 				output << "M=D\n";
 			}
+		}
+
+		if (argument == "static") {
+			output << "@SP\n";
+			output << "M=M-1\n";
+			output << "A=M\n";
+			output << "D=M\n";
+			output << "@" << fileName << "." << index << "\n";
+			output << "M=D\n";
 		}
 	}
 }
