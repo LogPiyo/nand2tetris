@@ -5,7 +5,6 @@
 
 static void helperWriteArithmetic(std::ofstream &output, std::string command);
 static int labelCounter = 0;
-static int staticCounter = 0;
 
 void CodeWriter::writeArithmetic(std::ofstream &output, std::string command, std::string fileName)
 {
@@ -377,18 +376,3 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 		}
 	}
 }
-
-static void helperWriteArithmetic(std::ofstream &output, std::string command) {
-	std::string outputString = "";
-	if (command == "add") {
-		outputString = "M=D+M";
-	}
-	else if (command == "sub") {
-		outputString = "M=M-D";
-	}
-	else if (command == "and") {
-		outputString = "M=D&M";
-	}
-}
-
-
