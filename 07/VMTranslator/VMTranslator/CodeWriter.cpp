@@ -3,7 +3,23 @@
 #include <iostream>
 #include <fstream>
 
-static void helperWriteArithmetic(std::ofstream &output, std::string command);
+// Arithmetic helpers
+static void writeArithmeticAddSubAndOr(std::ofstream& output, std::string insertedString);
+static void writeArithmeticNotNeg(std::ofstream& output, std::string insertedString);
+static void writeArithmeticEqLtGt(std::ofstream& output, std::string insertedString, std::string trueLabel, std::string falseLabel);
+
+// Push/Pop helpers
+static void writePushLocalLike(std::ofstream& output, std::string insertedString, int index);
+static void writePopLocalLike(std::ofstream& output, std::string insertedString, int index);
+static void writePushPointer(std::ofstream& output, std::string insertedString);
+static void writePopPointer(std::ofstream& output, std::string insertedString);
+static void writePushConstant(std::ofstream& output, int index);
+static void writePushTemp(std::ofstream& output, int index);
+static void writePushStatic(std::ofstream& output, std::string fileName, int index);
+static void writePopConstant(std::ofstream& output);
+static void writePopTemp(std::ofstream& output, int index);
+static void writePopStatic(std::ofstream& output, std::string fileName, int index);
+
 static int labelCounter = 0;
 
 void CodeWriter::writeArithmetic(std::ofstream &output, std::string command, std::string fileName)
@@ -12,142 +28,39 @@ void CodeWriter::writeArithmetic(std::ofstream &output, std::string command, std
 	std::string falseLabel = "FALSE_" + std::to_string(labelCounter);
 
 	if (command == "add") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "M=D+M\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
-	}
-
-	if (command == "and") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "M=D&M\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
+		writeArithmeticAddSubAndOr(output, "M=D+M");
 	}
 
 	if (command == "sub") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "M=M-D\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
+		writeArithmeticAddSubAndOr(output, "M=M-D");
 	}
 
-	if (command == "eq") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M-D\n";
-		output << "M=0\n";
-		output << "@" << trueLabel << '\n';
-		output << "D;JEQ\n";
-		output << "@" << falseLabel << '\n';
-		output << "0;JMP\n";
-		output << "(" << trueLabel << ")\n";
-		output << "@SP\n";
-		output << "A=M\n";
-		output << "M=-1\n";
-		output << "(" << falseLabel << ")\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
-	}
-
-	if (command == "lt") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M-D\n";
-		output << "M=0\n";
-		output << "@" << trueLabel << '\n';
-		output << "D;JLT\n";
-		output << "@" << falseLabel << '\n';
-		output << "0;JMP\n";
-		output << "(" << trueLabel << ")\n";
-		output << "@SP\n";
-		output << "A=M\n";
-		output << "M=-1\n";
-		output << "(" << falseLabel << ")\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
-	}
-
-	if (command == "gt") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M-D\n";
-		output << "M=0\n";
-		output << "@" << trueLabel << '\n';
-		output << "D;JGT\n";
-		output << "@" << falseLabel << '\n';
-		output << "0;JMP\n";
-		output << "(" << trueLabel << ")\n";
-		output << "@SP\n";
-		output << "A=M\n";
-		output << "M=-1\n";
-		output << "(" << falseLabel << ")\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
+	if (command == "and") {
+		writeArithmeticAddSubAndOr(output, "M=D&M");
 	}
 
 	if (command == "or") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "D=M\n";
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "M=D|M\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
+		writeArithmeticAddSubAndOr(output, "M=D|M");
+	}
+
+	if (command == "eq") {
+		writeArithmeticEqLtGt(output, "JEQ", trueLabel, falseLabel);
+	}
+
+	if (command == "lt") {
+		writeArithmeticEqLtGt(output, "JLT", trueLabel, falseLabel);
+	}
+
+	if (command == "gt") {
+		writeArithmeticEqLtGt(output, "JGT", trueLabel, falseLabel);
 	}
 
 	if (command == "not") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "M=!M\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
+		writeArithmeticNotNeg(output, "M=!M");
 	}
 
 	if (command == "neg") {
-		output << "@SP\n";
-		output << "M=M-1\n";
-		output << "A=M\n";
-		output << "M=-M\n";
-		output << "@SP\n";
-		output << "M=M+1\n";
+		writeArithmeticNotNeg(output, "M=-M");
 	}
 
 	labelCounter++;
@@ -157,222 +70,233 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 {
 	if (command == "push") {
 		if (argument == "constant") {
-			output << "@" << index << "\n";
-			output << "D=A\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushConstant(output, index);
 		}
 
 		if (argument == "local") {
-			output << "@" << index << "\n";
-			output << "D=A\n";
-			output << "@LCL\n";
-			output << "A=D+M\n";
-			output << "D=M\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushLocalLike(output, "LCL", index);
 		}
 
 		if (argument == "argument") {
-			output << "@" << index << "\n";
-			output << "D=A\n";
-			output << "@ARG\n";
-			output << "A=D+M\n";
-			output << "D=M\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushLocalLike(output, "ARG", index);
 		}
 
 		if (argument == "this") {
-			output << "@" << index << "\n";
-			output << "D=A\n";
-			output << "@THIS\n";
-			output << "A=D+M\n";
-			output << "D=M\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushLocalLike(output, "THIS", index);
 		}
 
 		if (argument == "that") {
-			output << "@" << index << "\n";
-			output << "D=A\n";
-			output << "@THAT\n";
-			output << "A=D+M\n";
-			output << "D=M\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushLocalLike(output, "THAT", index);
 		}
 
 		if (argument == "temp") {
-			output << "@" << 5 + index << "\n";
-			output << "D=M\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushTemp(output, index);
 		}
 
 		if (argument == "pointer") {
 			if (index == 0) {
-					output << "@THIS\n";
-					output << "D=M\n";
-					output << "@SP\n";
-					output << "A=M\n";
-					output << "M=D\n";
-					output << "@SP\n";
-					output << "M=M+1\n";
+				writePushPointer(output, "THIS");
 			}
 
 			if (index == 1) {
-				output << "@THAT\n";
-				output << "D=M\n";
-				output << "@SP\n";
-				output << "A=M\n";
-				output << "M=D\n";
-				output << "@SP\n";
-				output << "M=M+1\n";
+				writePushPointer(output, "THAT");
 			}
 		}
 
 		if (argument == "static") {
-			output << "@" << fileName << "." << index << "\n";
-			output << "D=M\n";
-			output << "@SP\n";
-			output << "A=M\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M+1\n";
+			writePushStatic(output, fileName, index);
 		}
 	}
 
 	if (command == "pop") {
 		if (argument == "constant") {
-			output << "@SP\n";
-			output << "M=M-1\n";
+			writePopConstant(output);
 		}
 
 		if (argument == "local") {
-			output << "@LCL\n";
-			output << "D=M\n";
-			output << "@" << index << "\n";
-			output << "D=D+A\n";
-			output << "@R13\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M-1\n";
-			output << "A=M\n";
-			output << "D=M\n";
-			output << "@R13\n";
-			output << "A=M\n";
-			output << "M=D\n";
+			writePopLocalLike(output, "LCL", index);
 		}
 
 		if (argument == "argument") {
-			output << "@ARG\n";
-			output << "D=M\n";
-			output << "@" << index << "\n";
-			output << "D=D+A\n";
-			output << "@R13\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M-1\n";
-			output << "A=M\n";
-			output << "D=M\n";
-			output << "@R13\n";
-			output << "A=M\n";
-			output << "M=D\n";
+			writePopLocalLike(output, "ARG", index);
 		}
 
 		if (argument == "this") {
-			output << "@THIS\n";
-			output << "D=M\n";
-			output << "@" << index << "\n";
-			output << "D=D+A\n";
-			output << "@R13\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M-1\n";
-			output << "A=M\n";
-			output << "D=M\n";
-			output << "@R13\n";
-			output << "A=M\n";
-			output << "M=D\n";
+			writePopLocalLike(output, "THIS", index);
 		}
 
 		if (argument == "that") {
-			output << "@THAT\n";
-			output << "D=M\n";
-			output << "@" << index << "\n";
-			output << "D=D+A\n";
-			output << "@R13\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M-1\n";
-			output << "A=M\n";
-			output << "D=M\n";
-			output << "@R13\n";
-			output << "A=M\n";
-			output << "M=D\n";
+			writePopLocalLike(output, "THAT", index);
 		}
 
 
 		if (argument == "temp") {
-			output << "@" << 5 + index << "\n";
-			output << "D=A\n";
-			output << "@R13\n";
-			output << "M=D\n";
-			output << "@SP\n";
-			output << "M=M-1\n";
-			output << "A=M\n";
-			output << "D=M\n";
-			output << "@R13\n";
-			output << "A=M\n";
-			output << "M=D\n";
+			writePopTemp(output, index);
 		}
 
 		if (argument == "pointer") {
 			if (index == 0) {
-				output << "@SP\n";
-				output << "M=M-1\n";
-				output << "A=M\n";
-				output << "D=M\n";
-				output << "@THIS\n";
-				output << "M=D\n";
+				writePopPointer(output, "THIS");
 			}
 
 			if (index == 1) {
-				output << "@SP\n";
-				output << "M=M-1\n";
-				output << "A=M\n";
-				output << "D=M\n";
-				output << "@THAT\n";
-				output << "M=D\n";
+				writePopPointer(output, "THAT");
 			}
 		}
 
 		if (argument == "static") {
-			output << "@SP\n";
-			output << "M=M-1\n";
-			output << "A=M\n";
-			output << "D=M\n";
-			output << "@" << fileName << "." << index << "\n";
-			output << "M=D\n";
+			writePopStatic(output, fileName, index);
 		}
 	}
+}
+
+static void writeArithmeticAddSubAndOr(std::ofstream &output, std::string insertedString) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << insertedString << "\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writeArithmeticNotNeg(std::ofstream& output, std::string insertedString) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << insertedString << "\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writeArithmeticEqLtGt(std::ofstream& output, std::string insertedString, std::string trueLabel, std::string falseLabel) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M-D\n";
+	output << "M=0\n";
+	output << "@" << trueLabel << '\n';
+	output << "D;" << insertedString << "\n";
+	output << "@" << falseLabel << '\n';
+	output << "0;JMP\n";
+	output << "(" << trueLabel << ")\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=-1\n";
+	output << "(" << falseLabel << ")\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writePushLocalLike(std::ofstream& output, std::string insertedString, int index) {
+	output << "@" << index << "\n";
+	output << "D=A\n";
+	output << "@" << insertedString << "\n";
+	output << "A=D+M\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writePopLocalLike(std::ofstream& output, std::string insertedString, int index) {
+	output << "@" << insertedString << "\n";
+	output << "D=M\n";
+	output << "@" << index << "\n";
+	output << "D=D+A\n";
+	output << "@R13\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@R13\n";
+	output << "A=M\n";
+	output << "M=D\n";
+}
+
+static void writePushPointer(std::ofstream& output, std::string insertedString) {
+	output << "@" << insertedString << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writePopPointer(std::ofstream& output, std::string insertedString) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@" << insertedString << "\n";
+	output << "M=D\n";
+}
+
+static void writePushConstant(std::ofstream& output, int index) {
+	output << "@" << index << "\n";
+	output << "D=A\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writePushTemp(std::ofstream& output, int index) {
+	output << "@" << 5 + index << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writePushStatic(std::ofstream& output, std::string fileName, int index) {
+	output << "@" << fileName << "." << index << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+}
+
+static void writePopConstant(std::ofstream& output) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+}
+
+static void writePopTemp(std::ofstream& output, int index) {
+	output << "@" << 5 + index << "\n";
+	output << "D=A\n";
+	output << "@R13\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@R13\n";
+	output << "A=M\n";
+	output << "M=D\n";
+}
+
+static void writePopStatic(std::ofstream& output, std::string fileName, int index) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@" << fileName << "." << index << "\n";
+	output << "M=D\n";
 }
