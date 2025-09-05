@@ -11,8 +11,8 @@ static void writeArithmeticEqLtGt(std::ofstream& output, std::string insertedStr
 // Push/Pop helpers
 static void writePushLocalLike(std::ofstream& output, std::string insertedString, int index);
 static void writePopLocalLike(std::ofstream& output, std::string insertedString, int index);
-static void writePushPointer(std::ofstream& output, std::string insertedString);
-static void writePopPointer(std::ofstream& output, std::string insertedString);
+static void writePushPointer(std::ofstream& output, int index);
+static void writePopPointer(std::ofstream& output, int index);
 static void writePushConstant(std::ofstream& output, int index);
 static void writePushTemp(std::ofstream& output, int index);
 static void writePushStatic(std::ofstream& output, std::string fileName, int index);
@@ -94,13 +94,7 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 		}
 
 		if (argument == "pointer") {
-			if (index == 0) {
-				writePushPointer(output, "THIS");
-			}
-
-			if (index == 1) {
-				writePushPointer(output, "THAT");
-			}
+			writePushPointer(output, index);
 		}
 
 		if (argument == "static") {
@@ -129,19 +123,12 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 			writePopLocalLike(output, "THAT", index);
 		}
 
-
 		if (argument == "temp") {
 			writePopTemp(output, index);
 		}
 
 		if (argument == "pointer") {
-			if (index == 0) {
-				writePopPointer(output, "THIS");
-			}
-
-			if (index == 1) {
-				writePopPointer(output, "THAT");
-			}
+			writePopPointer(output, index);
 		}
 
 		if (argument == "static") {
@@ -224,7 +211,20 @@ static void writePopLocalLike(std::ofstream& output, std::string insertedString,
 	output << "M=D\n";
 }
 
-static void writePushPointer(std::ofstream& output, std::string insertedString) {
+static void writePushPointer(std::ofstream& output, int index) {
+	std::string insertedString = "";
+
+	switch (index) {
+	case 0:
+		insertedString = "THIS";
+		break;
+	case 1:
+		insertedString = "THAT";
+		break;
+	default:
+		throw "Invaild argument in writePopPointer function";
+	}
+
 	output << "@" << insertedString << "\n";
 	output << "D=M\n";
 	output << "@SP\n";
@@ -234,7 +234,20 @@ static void writePushPointer(std::ofstream& output, std::string insertedString) 
 	output << "M=M+1\n";
 }
 
-static void writePopPointer(std::ofstream& output, std::string insertedString) {
+static void writePopPointer(std::ofstream& output, int index) {
+	std::string insertedString = "";
+
+	switch (index) {
+		case 0:
+			insertedString = "THIS";
+			break;
+		case 1:
+			insertedString = "THAT";
+			break;
+		default:
+			throw "Invaild argument in writePopPointer function";
+	}
+
 	output << "@SP\n";
 	output << "M=M-1\n";
 	output << "A=M\n";
