@@ -137,6 +137,24 @@ void CodeWriter::writePushPop(std::ofstream &output, std::string command, std::s
 	}
 }
 
+void CodeWriter::writeLabel(std::ofstream& output, std::string label) {
+	output << "(" << label << ")\n";
+}
+
+void CodeWriter::writeGoto(std::ofstream& output, std::string label) {
+	output << "@" << label << "\n";
+	output << "0;JMP\n";
+}
+
+void CodeWriter::writeIf(std::ofstream& output, std::string label) {
+	output << "@SP\n";
+	output << "M=M-1\n";
+	output << "A=M\n";
+	output << "D=M\n";
+	output << "@" << label << "\n";
+	output << "D;JNE\n";
+}
+
 static void writeArithmeticAddSubAndOr(std::ofstream &output, std::string insertedString) {
 	output << "@SP\n";
 	output << "M=M-1\n";

@@ -28,6 +28,8 @@ int main(int argc, char* argv[])
 
     std::string line;
     while (std::getline(input, line)) {
+        Parser::advance(&line);
+
         int commandType = Parser::commandType(line);
 
         switch (commandType) {
@@ -43,6 +45,24 @@ int main(int argc, char* argv[])
                 std::string arg1 = Parser::arg1(line);
                 std::string arg2 = Parser::arg2(line);
 				CodeWriter::writePushPop(output, commandType == C_PUSH ? "push" : "pop", arg1, std::stoi(arg2), fileName);
+                break;
+            }
+            case C_LABEL:
+            {
+                std::string arg1 = Parser::arg1(line);
+                CodeWriter::writeLabel(output, arg1);
+                break;
+            }
+            case C_GOTO:
+            {
+                std::string arg1 = Parser::arg1(line);
+                CodeWriter::writeGoto(output, arg1);
+                break;
+            }
+            case C_IF:
+            {
+                std::string arg1 = Parser::arg1(line);
+                CodeWriter::writeIf(output, arg1);
                 break;
             }
         }
