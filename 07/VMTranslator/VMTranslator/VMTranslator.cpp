@@ -8,6 +8,10 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <vector>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 int main(int argc, char* argv[])
 {
@@ -16,26 +20,48 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::ifstream input(argv[1]);
-    if (!input) {
+    fs::path inputPath(argv[1]);
+    std::vector<fs::path> vmFiles;
+    fs::path outputPath;
+
+    if (fs::is_directory(inputPath)) {
+        outputPath = inputPath / (inputPath.filename().string() + ".asm");
+        for (const auto& entry : fs::directory_iterator(inputPath)) {
+            if (entry.path().extension() == ".vm") {
+                vmFiles.push_back(entry.path());
+            }
+        }
+    }
+    else {
+        vmFiles.push_back(inputPath);
+        std::string fileName = inputPath.stem().string();
+        outputPath = inputPath.parent_path() / (fileName + ".asm");
+    }
+
+    std::ofstream output(outputPath);
+    if (!output) {
         std::cerr << "Failed to open!" << std::endl;
         return 1;
     }
 
-    std::string fileName = std::string(argv[1]).substr(0, std::string(argv[1]).find_last_of('.'));
-    std::string outputFile = fileName + ".asm";
-    std::ofstream output(outputFile);
-
-    std::string line;
-
     CodeWriter::bootStrap(output);
 
-    while (std::getline(input, line)) {
-        Parser::advance(&line);
+    for (const auto& vmPath : vmFiles) {
+        std::ifstream input(vmPath);
+        if (!input) {
+            std::cerr << "Failed to open!" << std::endl;
+            continue;
+        }
 
-        int commandType = Parser::commandType(line);
+        std::string fileName = vmPath.stem().string();
+        std::string line;
 
-        switch (commandType) {
+        while (std::getline(input, line)) {
+            Parser::advance(&line);
+
+            int commandType = Parser::commandType(line);
+
+            switch (commandType) {
             case C_ARITHMETIC:
             {
                 std::string arg1 = Parser::arg1(line);
@@ -47,7 +73,7 @@ int main(int argc, char* argv[])
             {
                 std::string arg1 = Parser::arg1(line);
                 std::string arg2 = Parser::arg2(line);
-				CodeWriter::writePushPop(output, commandType == C_PUSH ? "push" : "pop", arg1, std::stoi(arg2), fileName);
+                CodeWriter::writePushPop(output, commandType == C_PUSH ? "push" : "pop", arg1, std::stoi(arg2), fileName);
                 break;
             }
             case C_LABEL:
@@ -89,9 +115,12 @@ int main(int argc, char* argv[])
             }
             default:
                 continue;
+            }
         }
     }
 
     CodeWriter::close(output);
+
+    return 0;
 }
 
