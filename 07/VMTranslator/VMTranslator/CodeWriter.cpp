@@ -21,6 +21,7 @@ static void writePopTemp(std::ofstream& output, int index);
 static void writePopStatic(std::ofstream& output, std::string fileName, int index);
 
 static int labelCounter = 0;
+static int returnCounter = 0;
 
 void CodeWriter::writeArithmetic(std::ofstream &output, std::string command, std::string fileName)
 {
@@ -153,6 +154,170 @@ void CodeWriter::writeIf(std::ofstream& output, std::string label) {
 	output << "D=M\n";
 	output << "@" << label << "\n";
 	output << "D;JNE\n";
+}
+
+void CodeWriter::writeFunction(std::ofstream& output, std::string functionName, int nVars)
+{
+	output << "(" << functionName << ")\n";
+	for (int i = 0; i < nVars; i++) {
+		writePushConstant(output, 0);
+	}
+}
+
+void CodeWriter::writeCall(std::ofstream& output, std::string functionName, int nArgs)
+{
+	std::string returnLabel = functionName + "$ret." + std::to_string(returnCounter);
+
+	// push returnLabel
+	output << "@" << returnLabel << "\n";
+	output << "D=A\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+
+	// push LCL
+	output << "@LCL" << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+
+	// push ARG
+	output << "@ARG" << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+
+	// push THIS
+	output << "@THIS" << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+
+	// push THAT
+	output << "@THAT" << "\n";
+	output << "D=M\n";
+	output << "@SP\n";
+	output << "A=M\n";
+	output << "M=D\n";
+	output << "@SP\n";
+	output << "M=M+1\n";
+
+	// ARG = SP - 5 - nArgs
+	output << "@SP\n";
+	output << "D=M\n";
+	output << "@" << std::to_string(5 + nArgs) << "\n";
+	output << "D=D-A\n";
+	output << "@ARG\n";
+	output << "M=D\n";
+
+	// LCL = SP
+	output << "@SP\n";
+	output << "D=M\n";
+	output << "@LCL\n";
+	output << "M=D\n";
+	writeGoto(output, functionName);
+	output << "(" << returnLabel << ")\n";
+
+	returnCounter++;
+}
+
+void CodeWriter::writeReturn(std::ofstream& output)
+{
+    // endFrame = LCL (R13)
+    output << "@LCL\n";
+    output << "D=M\n";
+    output << "@R13\n";
+    output << "M=D\n";
+
+    // retAddr = *(endFrame - 5) (R14)
+    output << "@5\n";
+    output << "A=D-A\n"; // D holds endFrame's value
+    output << "D=M\n";
+    output << "@R14\n";
+    output << "M=D\n";
+
+    // *ARG = pop()
+    output << "@SP\n";
+    output << "M=M-1\n";
+    output << "A=M\n";
+    output << "D=M\n";
+    output << "@ARG\n";
+    output << "A=M\n";
+    output << "M=D\n";
+
+    // SP = ARG + 1
+    output << "@ARG\n";
+    output << "D=M+1\n";
+    output << "@SP\n";
+    output << "M=D\n";
+
+    // THAT = *(endFrame - 1)
+    output << "@R13\n";
+    output << "D=M\n";
+    output << "@1\n";
+    output << "A=D-A\n";
+    output << "D=M\n";
+    output << "@THAT\n";
+    output << "M=D\n";
+
+    // THIS = *(endFrame - 2)
+    output << "@R13\n";
+    output << "D=M\n";
+    output << "@2\n";
+    output << "A=D-A\n";
+    output << "D=M\n";
+    output << "@THIS\n";
+    output << "M=D\n";
+
+    // ARG = *(endFrame - 3)
+    output << "@R13\n";
+    output << "D=M\n";
+    output << "@3\n";
+    output << "A=D-A\n";
+    output << "D=M\n";
+    output << "@ARG\n";
+    output << "M=D\n";
+
+    // LCL = *(endFrame - 4)
+    output << "@R13\n";
+    output << "D=M\n";
+    output << "@4\n";
+    output << "A=D-A\n";
+    output << "D=M\n";
+    output << "@LCL\n";
+    output << "M=D\n";
+
+    // goto retAddr
+    output << "@R14\n";
+    output << "A=M\n";
+    output << "0;JMP\n";
+}
+
+void CodeWriter::bootStrap(std::ofstream& output)
+{
+	output << "@256\n";
+	output << "D=A\n";
+	output << "@SP\n";
+	output << "M=D\n";
+	writeCall(output, "Sys.init", 0);
+}
+
+void CodeWriter::close(std::ofstream& output)
+{
+	output << "(INFINITE_LOOP)\n";
+	output << "@INFINITE_LOOP\n";
+	output << "0;JMP\n";
 }
 
 static void writeArithmeticAddSubAndOr(std::ofstream &output, std::string insertedString) {

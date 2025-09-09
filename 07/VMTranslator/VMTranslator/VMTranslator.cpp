@@ -27,6 +27,9 @@ int main(int argc, char* argv[])
     std::ofstream output(outputFile);
 
     std::string line;
+
+    CodeWriter::bootStrap(output);
+
     while (std::getline(input, line)) {
         Parser::advance(&line);
 
@@ -65,7 +68,30 @@ int main(int argc, char* argv[])
                 CodeWriter::writeIf(output, arg1);
                 break;
             }
+            case C_FUNCTION:
+            {
+                std::string arg1 = Parser::arg1(line);
+                std::string arg2 = Parser::arg2(line);
+                CodeWriter::writeFunction(output, arg1, std::stoi(arg2));
+                break;
+            }
+            case C_CALL:
+            {
+                std::string arg1 = Parser::arg1(line);
+                std::string arg2 = Parser::arg2(line);
+                CodeWriter::writeCall(output, arg1, std::stoi(arg2));
+                break;
+            }
+            case C_RETURN:
+            {
+                CodeWriter::writeReturn(output);
+                break;
+            }
+            default:
+                continue;
         }
     }
+
+    CodeWriter::close(output);
 }
 

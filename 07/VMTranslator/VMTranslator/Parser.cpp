@@ -46,6 +46,15 @@ int Parser::commandType(std::string line)
     else if (first == "if-goto") {
         return C_IF;
     }
+    else if (first == "function") {
+        return C_FUNCTION;
+    }
+    else if (first == "call") {
+        return C_CALL;
+    }
+    else if (first == "return") {
+        return C_RETURN;
+    }
     else {
         return -1;
     }
@@ -67,6 +76,8 @@ std::string Parser::arg1(std::string line)
         case C_LABEL:
         case C_GOTO:
         case C_IF:
+        case C_FUNCTION:
+        case C_CALL:
         {
 			std::string first;
             std::string second;
